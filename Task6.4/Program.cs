@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Task6._4
 {
@@ -35,7 +34,7 @@ namespace Task6._4
                         TakeCard();
                         break;
                     case "3":
-                        ShowDetails();
+                        ShowCardsInfo();
                         break;
                     case "4":
                         isWork = false;
@@ -49,90 +48,115 @@ namespace Task6._4
 
         private void TakeCard()
         {
-            Console.Clear();
-            char result = ' ';
-            Console.WriteLine("Введите номер карты:");
+            int choosenNumber = ChooseCardNumber();
+            Suits choosenSuit = ChooseSuit();
 
-            if (CheckState(ref result))
+            if (FindExistedCard(choosenNumber, choosenSuit))
             {
-                Console.WriteLine("Выберите масть: \nПики ♠ \nКрести ♣ \nБуби ♦ \nЧерви ♥");
-                string suit = Console.ReadLine();
-
-                for (int i = 0; i < _cards.Count; i++)
-                {
-                    if (_cards.ElementAt(i).NumberOfCard == result && _cards.ElementAt(i).Suit == suit)
-                    {
-                        GetMessage("Такая карта уже взята из колоды.");
-                    }
-                    else
-                    {
-                        _cards.Add(new Card(suit, result));
-                        GetMessage("карта успешно взята!");
-                        return;
-                    }
-                }
+                GetMessage("Такая карта уже взята из колоды.");
             }
             else
             {
-                WriteError();
+                _cards.Add(new Card(choosenSuit, choosenNumber));
+                GetMessage("Карта успешно взята!");
             }
+        }
+
+        private bool FindExistedCard(int nummber, Suits suit)
+        {
+            foreach (Card card in _cards)
+            {
+                if (card.Number == nummber && card.Suit == suit)
+                    return true;
+            }
+
+            return false;
         }
 
         private void TakeRandomCard()
         {
-            Random random = new Random();
-            string[] suits = new string[4] { "Черви ♥", "Буби ♦", "Крести ♣", "Пики ♠" };
-            int minValue = 2;
-            int maxValueForChar = 13;
-            int maxValue = 10;
-            int randomNumber = random.Next(minValue, maxValueForChar);
-            string randomSuit = suits[random.Next(0, suits.Length)];
-            Console.WriteLine(randomNumber);
-            Console.WriteLine(TryGetChar(randomNumber, maxValue));
-            Console.ReadKey();
-            Console.Clear();
-            char randomChar = TryGetChar(randomNumber, maxValue);
-            _cards.Add(new Card(randomSuit, randomChar));
-            GetMessage("карта успешно взята!");
+            _cards.Add(new Card());
+            GetMessage("Карта успешно взята!");
         }
 
-        private char TryGetChar(int randomNumber, int maxValue)
+        private void ShowCardsInfo()
         {
-            char randomChar;
-            char[] chars = new char[4] { 'J', 'Q', 'K', 'A' };
-
-            //maxValue = 10
-            if (randomNumber >= maxValue)
+            if (_cards.Count == 0)
             {
-                randomNumber -= maxValue;
-                randomChar = chars[randomNumber];
+                Console.WriteLine("Карт нет!");
             }
             else
             {
-                randomChar = (char)randomNumber;
-            }
+                Console.WriteLine("Информация о картах:");
 
-            return randomChar;
-        }
-
-        private void ShowDetails()
-        {
-            Console.Clear();
-            Console.WriteLine("Информация о картах:");
-
-            for (int i = 0; i < _cards.Count; i++)
-            {
-                _cards[i].ShowInfo();
+                for (int i = 0; i < _cards.Count; i++)
+                {
+                    _cards[i].ShowInfo();
+                }
             }
 
             GetMessage();
         }
 
-        private bool CheckState(ref char result)
+        private Suits ChooseSuit()
         {
-            string userInput = Console.ReadLine();
-            bool state = char.TryParse(userInput, out result);
-            return state;
+            bool isRepeating = true;
+
+            while (isRepeating)
+            {
+                ShowSuits();
+                Console.Write("Выбирите масть: ");
+
+                if (int.TryParse(Console.ReadLine(), out int result))
+                {
+                    if (result >= 0 && result <= Enum.GetValues(typeof(Suits)).Length)
+                    {
+                        return (Suits)result;
+                    }
+                    else
+                    {
+                        WriteError();
+                    }
+                }
+            }
+
+            return (Suits)(-1);
+        }
+
+        private void ShowSuits()
+        {
+            int suitCount = Enum.GetValues(typeof(Suits)).Length;
+
+            for (int i = 0; i < suitCount; i++)
+            {
+                Console.WriteLine($"{i} - {(Suits)i}");
+            }
+        }
+
+        private int ChooseCardNumber()
+        {
+            int maxNumber = 10;
+            int minMubmber = 2;
+            bool isRepeating = true;
+
+            while (isRepeating)
+            {
+                Console.WriteLine($"Введите число от {minMubmber} до {maxNumber}");
+
+                if (int.TryParse(Console.ReadLine(), out int result))
+                {
+                    if (result >= minMubmber && result < maxNumber)
+                    {
+                        return result;
+                    }
+                    else
+                    {
+                        WriteError();
+                    }
+                }
+            }
+
+            return -1;
         }
 
         private void GetMessage(string text = "")
@@ -145,26 +169,53 @@ namespace Task6._4
 
         private void WriteError()
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             GetMessage("Введите корректные данные.");
+            Console.ResetColor();
         }
+    }
+
+    public enum Suits
+    {
+        Diamonds,
+        Hearts,
+        Clubs,
+        Spades
     }
 
     class Card
     {
-        private string _suit;
-        private char _number;
-        public char NumberOfCard { get; private set; }
-        public string Suit { get; private set; }
+        public int Number { get; private set; }
+        public Suits Suit { get; private set; }
 
-        public Card(string suit, char number)
+        public Card(Suits suit, int number)
         {
-            _suit = suit;
-            _number = number;
+            Suit = suit;
+            Number = number;
+        }
+
+        public Card()
+        {
+            Suit = GetRandomSuit();
+            Number = GetRandomNumber();
         }
 
         public void ShowInfo()
         {
-            Console.WriteLine($"Карта - {_number} .Масть - {_suit}.");
+            Console.WriteLine($"Карта - {Number}. Масть - {Suit}.");
+        }
+
+        private Suits GetRandomSuit()
+        {
+            return (Suits)new Random().Next(Enum.GetValues(typeof(Suits)).Length);
+        }
+
+        private int GetRandomNumber()
+        {
+            int maxNumber = 10;
+            int minMubmber = 2;
+
+            return new Random().Next(minMubmber, maxNumber);
         }
     }
 }
